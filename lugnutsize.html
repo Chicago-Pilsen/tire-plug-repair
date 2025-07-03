@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lugnut Size Matcher</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .user-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .timer-section {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            padding: 15px 25px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            margin-bottom: 20px;
+        }
+
+        .timer {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 5px;
+        }
+
+        .timer.warning {
+            color: #ff6b6b;
+            animation: timerPulse 1s infinite;
+        }
+
+        @keyframes timerPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .timer-label {
+            font-size: 1.1em;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .start-btn {
+            background: linear-gradient(45deg, #28a745, #20c997);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .start-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .game-paused {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .user-input {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-input input {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+
+        .score-display {
+            font-size: 1.2em;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .game-section {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+        }
+
+        .question {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .question h2 {
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        .vehicle-card {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            padding: 20px;
+            border-radius: 15px;
+            display: inline-block;
+            font-size: 1.3em;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .option-btn {
+            padding: 15px 20px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .option-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .option-btn.correct {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+            animation: correctPulse 0.6s ease;
+        }
+
+        .option-btn.incorrect {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            animation: incorrectShake 0.6s ease;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes incorrectShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .next-btn {
+            background: linear-gradient(45deg, #9b59b6, #8e44ad);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1em;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .next-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(155, 89, 182, 0.4);
+        }
+
+        .reference-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+        }
+
+        .reference-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .brand-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .brand-section h3 {
+            color: #ffd700;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            text-align: center;
+        }
+
+        .vehicle-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .vehicle-item:last-child {
+            border-bottom: none;
+        }
+
+        .size-badge {
+            background: #ff6b6b;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .stats {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 768px) {
+            .user-section {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .options {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 Lugnut Size Matcher 🔧</h1>
+            <p>Test your automotive knowledge!</p>
+        </div>
+
+        <div class="user-section">
+            <div class="user-input">
+                <label for="username">Player Name:</label>
+                <input type="text" id="username" placeholder="Enter your name" value="Player">
+            </div>
+            <div class="score-display">
+                <span id="current-score">Score: 0</span> | 
+                <span id="top-score">Top Score: 0</span> |
+                <span id="player-name">Player</span>
+            </div>
+        </div>
+
+        <div class="timer-section">
+            <div class="timer" id="timer">30</div>
+            <div class="timer-label">seconds remaining</div>
+            <button class="start-btn" id="start-btn" onclick="startTimer()">Start Timer</button>
+        </div>
+
+        <div class="game-section">
+            <div class="question">
+                <h2>What's the lugnut size for this vehicle?</h2>
+                <div class="vehicle-card" id="current-vehicle">
+                    Loading...
+                </div>
+            </div>
+
+            <div class="options" id="options-container">
+                <!-- Options will be generated here -->
+            </div>
+
+            <button class="next-btn" id="next-btn" onclick="nextQuestion()" style="display: none;">
+                Next Question
+            </button>
+
+            <div class="stats">
+                <span id="streak">Streak: 0</span> | 
+                <span id="total-questions">Questions: 0</span> |
+                <span id="accuracy">Accuracy: 0%</span>
+            </div>
+        </div>
+
+        <div class="reference-section">
+            <h2 style="text-align: center; margin-bottom: 25px; color: #ffd700;">📋 Lugnut Size Reference</h2>
+            <div class="reference-grid" id="reference-grid">
+                <!-- Reference will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Vehicle database with lugnut sizes
+        const vehicles = {
+            'Ford': {
+                'F-150': '21mm',
+                'Mustang': '19mm',
+                'Explorer': '19mm',
+                'Escape': '19mm',
+                'Focus': '19mm',
+                'Fusion': '19mm',
+                'Edge': '19mm'
+            },
+            'Chevrolet': {
+                'Silverado': '22mm',
+                'Camaro': '21mm',
+                'Equinox': '19mm',
+                'Malibu': '19mm',
+                'Cruze': '19mm',
+                'Tahoe': '22mm',
+                'Suburban': '22mm'
+            },
+            'Toyota': {
+                'Camry': '19mm',
+                'Corolla': '19mm',
+                'RAV4': '19mm',
+                'Highlander': '19mm',
+                'Prius': '19mm',
+                'Tacoma': '21mm',
+                'Tundra': '22mm'
+            },
+            'Honda': {
+                'Civic': '19mm',
+                'Accord': '19mm',
+                'CR-V': '19mm',
+                'Pilot': '19mm',
+                'Odyssey': '19mm',
+                'Ridgeline': '19mm'
+            },
+            'Nissan': {
+                'Altima': '19mm',
+                'Sentra': '19mm',
+                'Rogue': '19mm',
+                'Pathfinder': '21mm',
+                'Titan': '22mm',
+                'Frontier': '21mm'
+            },
+            'RAM': {
+                '1500': '22mm',
+                '2500': '22mm',
+                '3500': '22mm'
+            },
+            'GMC': {
+                'Sierra': '22mm',
+                'Terrain': '19mm',
+                'Acadia': '19mm',
+                'Yukon': '22mm'
+            }
+        };
+
+        let currentQuestion = {};
+        let score = 0;
+        let topScore = 0;
+        let topScorePlayer = '';
+        let streak = 0;
+        let totalQuestions = 0;
+        let correctAnswers = 0;
+        let answered = false;
+        let timeLeft = 30;
+        let timerInterval;
+        let gameActive = false;
+        let timerStarted = false;
+
+        // Load top score from memory
+        function loadTopScore() {
+            // In a real application, this would use localStorage
+            // For this demo, we'll keep it in memory
+            topScore = topScore || 0;
+            topScorePlayer = topScorePlayer || 'Player';
+            updateTopScoreDisplay();
+        }
+
+        // Update top score display
+        function updateTopScoreDisplay() {
+            document.getElementById('top-score').textContent = `Top Score: ${topScore} (${topScorePlayer})`;
+        }
+
+        // Save top score to memory
+        function saveTopScore() {
+            const currentPlayer = document.getElementById('username').value || 'Player';
+            if (score > topScore) {
+                topScore = score;
+                topScorePlayer = currentPlayer;
+                updateTopScoreDisplay();
+            }
+        }
+
+        // Timer functions
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timeLeft = 30;
+            gameActive = true;
+            timerStarted = true;
+            answered = false;
+            
+            // Update button and game state
+            const startBtn = document.getElementById('start-btn');
+            startBtn.textContent = 'Timer Running...';
+            startBtn.disabled = true;
+            
+            // Enable the game
+            const gameSection = document.querySelector('.game-section');
+            gameSection.classList.remove('game-paused');
+            
+            updateTimerDisplay();
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+                
+                if (timeLeft <= 0) {
+                    timeUp();
+                }
+            }, 1000);
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 30;
+            timerStarted = false;
+            gameActive = false;
+            
+            const startBtn = document.getElementById('start-btn');
+            startBtn.textContent = 'Start Timer';
+            startBtn.disabled = false;
+            
+            // Disable the game
+            const gameSection = document.querySelector('.game-section');
+            gameSection.classList.add('game-paused');
+            
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            const timerElement = document.getElementById('timer');
+            timerElement.textContent = timeLeft;
+            
+            if (timeLeft <= 10) {
+                timerElement.classList.add('warning');
+            } else {
+                timerElement.classList.remove('warning');
+            }
+        }
+
+        function timeUp() {
+            if (answered || !gameActive) return;
+            
+            clearInterval(timerInterval);
+            answered = true;
+            totalQuestions++;
+            streak = 0;
+            timerStarted = false;
+            
+            // Show correct answer
+            const allBtns = document.querySelectorAll('.option-btn');
+            allBtns.forEach(btn => {
+                btn.disabled = true;
+                if (btn.textContent === currentQuestion.correctSize) {
+                    btn.classList.add('correct');
+                }
+            });
+            
+            // Reset timer button
+            const startBtn = document.getElementById('start-btn');
+            startBtn.textContent = 'Start Timer';
+            startBtn.disabled = false;
+            
+            updateStats();
+            saveTopScore();
+            
+            document.getElementById('next-btn').style.display = 'block';
+        }
+
+        // Generate reference grid
+        function generateReference() {
+            const grid = document.getElementById('reference-grid');
+            
+            Object.keys(vehicles).forEach(brand => {
+                const brandDiv = document.createElement('div');
+                brandDiv.className = 'brand-section';
+                
+                brandDiv.innerHTML = `
+                    <h3>${brand}</h3>
+                    ${Object.keys(vehicles[brand]).map(model => `
+                        <div class="vehicle-item">
+                            <span>${model}</span>
+                            <span class="size-badge">${vehicles[brand][model]}</span>
+                        </div>
+                    `).join('')}
+                `;
+                
+                grid.appendChild(brandDiv);
+            });
+        }
+
+        // Generate random question
+        function generateQuestion() {
+            const brands = Object.keys(vehicles);
+            const randomBrand = brands[Math.floor(Math.random() * brands.length)];
+            const models = Object.keys(vehicles[randomBrand]);
+            const randomModel = models[Math.floor(Math.random() * models.length)];
+            
+            const correctSize = vehicles[randomBrand][randomModel];
+            const allSizes = ['17mm', '19mm', '21mm', '22mm', '24mm'];
+            
+            // Create wrong options
+            const wrongSizes = allSizes.filter(size => size !== correctSize);
+            const selectedWrong = wrongSizes.sort(() => 0.5 - Math.random()).slice(0, 3);
+            
+            const options = [correctSize, ...selectedWrong].sort(() => 0.5 - Math.random());
+            
+            currentQuestion = {
+                brand: randomBrand,
+                model: randomModel,
+                correctSize: correctSize,
+                options: options
+            };
+            
+            answered = false;
+            updateDisplay();
+        }
+
+        // Update display
+        function updateDisplay() {
+            document.getElementById('current-vehicle').textContent = 
+                `${currentQuestion.brand} ${currentQuestion.model}`;
+            
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+            
+            currentQuestion.options.forEach(option => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = option;
+                btn.onclick = () => selectAnswer(option, btn);
+                optionsContainer.appendChild(btn);
+            });
+            
+            document.getElementById('next-btn').style.display = 'none';
+            
+            // Pause the game until timer is started
+            const gameSection = document.querySelector('.game-section');
+            gameSection.classList.add('game-paused');
+            
+            resetTimer();
+        }
+
+        // Select answer
+        function selectAnswer(selected, btnElement) {
+            if (answered || !gameActive || !timerStarted) return;
+            
+            clearInterval(timerInterval);
+            answered = true;
+            totalQuestions++;
+            timerStarted = false;
+            
+            const allBtns = document.querySelectorAll('.option-btn');
+            
+            if (selected === currentQuestion.correctSize) {
+                btnElement.classList.add('correct');
+                score += 10;
+                streak++;
+                correctAnswers++;
+                
+                // Bonus points for quick answers
+                if (timeLeft > 20) {
+                    score += 5; // Speed bonus
+                }
+            } else {
+                btnElement.classList.add('incorrect');
+                // Show correct answer
+                allBtns.forEach(btn => {
+                    if (btn.textContent === currentQuestion.correctSize) {
+                        btn.classList.add('correct');
+                    }
+                });
+                streak = 0;
+            }
+            
+            // Disable all buttons
+            allBtns.forEach(btn => btn.disabled = true);
+            
+            // Reset timer button
+            const startBtn = document.getElementById('start-btn');
+            startBtn.textContent = 'Start Timer';
+            startBtn.disabled = false;
+            
+            updateStats();
+            saveTopScore();
+            
+            document.getElementById('next-btn').style.display = 'block';
+        }
+
+        // Update stats
+        function updateStats() {
+            document.getElementById('current-score').textContent = `Score: ${score}`;
+            document.getElementById('streak').textContent = `Streak: ${streak}`;
+            document.getElementById('total-questions').textContent = `Questions: ${totalQuestions}`;
+            
+            const accuracy = totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
+            document.getElementById('accuracy').textContent = `Accuracy: ${accuracy}%`;
+        }
+
+        // Next question
+        function nextQuestion() {
+            if (!gameActive) return;
+            generateQuestion();
+        }
+
+        // Reset game
+        function resetGame() {
+            clearInterval(timerInterval);
+            score = 0;
+            streak = 0;
+            totalQuestions = 0;
+            correctAnswers = 0;
+            gameActive = false;
+            timerStarted = false;
+            updateStats();
+            generateQuestion();
+        }
+
+        // Initialize game
+        function initGame() {
+            loadTopScore();
+            generateReference();
+            generateQuestion();
+            updateStats();
+            
+            // Start with game paused
+            const gameSection = document.querySelector('.game-section');
+            gameSection.classList.add('game-paused');
+        }
+
+        // Start the game
+        initGame();
+
+        // Update player name display
+        document.getElementById('username').addEventListener('input', function() {
+            const playerName = this.value || 'Player';
+            document.getElementById('player-name').textContent = playerName;
+        updateTopScoreDisplay();
+    });
+
+        // Initialize player name
+        document.getElementById('player-name').textContent = document.getElementById('username').value || 'Player';
+    </script>
+</body>
+</html>
